@@ -16,6 +16,7 @@ import me.leoko.advancedban.utils.tabcompletion.PunishmentTabCompleter;
 import me.leoko.advancedban.utils.tabcompletion.TabCompleter;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -279,7 +280,7 @@ public enum Command {
             "banlist"),
 
     HISTORY("ab.history",
-            "\\S+( [1-9][0-9]*)?",
+            "\\S+( [1-9][0-9]*)?|\\S+|",
             new CleanTabCompleter((user, args) -> {
                 if(args.length == 1)
                     return list(CleanTabCompleter.PLAYER_PLACEHOLDER, "[Name]");
@@ -288,9 +289,7 @@ public enum Command {
                 else
                     return list();
             }),
-            new ListProcessor(
-                    target -> PunishmentManager.get().getPunishments(target, null, false),
-                    "History", true, true),
+            input -> hasPerm(input, "History", null, false),
             "History.Usage",
             "history"),
 
@@ -307,29 +306,7 @@ public enum Command {
                 else
                     return list();
             }),
-            input -> {
-                if (input.hasNext() && !input.getPrimary().matches("[1-9][0-9]*")) {
-                    if (!Universal.get().hasPerms(input.getSender(), "ab.warns.other")) {
-                        MessageManager.sendMessage(input.getSender(), "General.NoPerms", true);
-                        return;
-                    }
-
-                    new ListProcessor(
-                            target -> PunishmentManager.get().getPunishments(target, PunishmentType.WARNING, true),
-                            "Warns", false, true).accept(input);
-                } else {
-                    if (!Universal.get().hasPerms(input.getSender(), "ab.warns.own")) {
-                        MessageManager.sendMessage(input.getSender(), "General.NoPerms", true);
-                        return;
-                    }
-
-                    String name = Universal.get().getMethods().getName(input.getSender());
-                    String identifier = processName(new Command.CommandInput(input.getSender(), new String[]{name}));
-                    new ListProcessor(
-                            target -> PunishmentManager.get().getPunishments(identifier, PunishmentType.WARNING, true),
-                            "WarnsOwn", false, false).accept(input);
-                }
-            },
+            input -> hasPerm(input, "Warns", PunishmentType.WARNING, true),
             "Warns.Usage",
             "warns"),
     NOTES(null,
@@ -345,29 +322,7 @@ public enum Command {
                 else
                     return list();
             }),
-            input -> {
-                if (input.hasNext() && !input.getPrimary().matches("[1-9][0-9]*")) {
-                    if (!Universal.get().hasPerms(input.getSender(), "ab.notes.other")) {
-                        MessageManager.sendMessage(input.getSender(), "General.NoPerms", true);
-                        return;
-                    }
-
-                    new ListProcessor(
-                            target -> PunishmentManager.get().getPunishments(target, PunishmentType.NOTE, true),
-                            "Notes", false, true).accept(input);
-                } else {
-                    if (!Universal.get().hasPerms(input.getSender(), "ab.notes.own")) {
-                        MessageManager.sendMessage(input.getSender(), "General.NoPerms", true);
-                        return;
-                    }
-
-                    String name = Universal.get().getMethods().getName(input.getSender());
-                    String identifier = processName(new Command.CommandInput(input.getSender(), new String[]{name}));
-                    new ListProcessor(
-                            target -> PunishmentManager.get().getPunishments(identifier, PunishmentType.NOTE, true),
-                            "NotesOwn", false, false).accept(input);
-                }
-            },
+            input -> hasPerm(input, "Notes", PunishmentType.NOTE, true),
             "Notes.Usage",
             "notes"),
 
@@ -521,7 +476,37 @@ public enum Command {
             },
             null,
             "advancedban");
+    private static void hasPerm(Command.CommandInput input, String FriendlyName, PunishmentType put, boolean current){
+        MethodInterface mi = Universal.get().getMethods();
+        List<PunishmentType> Types = new ArrayList<>();
+        Object c =mi.getConfig();
 
+        if(put == null)
+            mi.getStringList(c,"FullHistory").forEach((typeString -> Types.add(PunishmentType.valueOf(typeString))));
+        else
+            Types.add(put);
+
+        if (input.hasNext() && !input.getPrimary().matches("[1-9][0-9]*")) {
+            if (!Universal.get().hasPerms(input.getSender(), "ab." + FriendlyName.toLowerCase() + ".other")) {
+                MessageManager.sendMessage(input.getSender(), "General.NoPerms", true);
+                return;
+            }
+            new ListProcessor(
+                    target -> PunishmentManager.get().getPunishmentsOfTypes(target, Types, current),
+                    FriendlyName, false, true).accept(input);
+        } else {
+            if (!Universal.get().hasPerms(input.getSender(), "ab." + FriendlyName.toLowerCase() + ".own")) {
+                MessageManager.sendMessage(input.getSender(), "General.NoPerms", true);
+                return;
+            }
+
+            String name = Universal.get().getMethods().getName(input.getSender());
+            String identifier = processName(new Command.CommandInput(input.getSender(), new String[]{name}));
+            new ListProcessor(
+                    target -> PunishmentManager.get().getPunishmentsOfTypes(identifier, Types, current),
+                    FriendlyName + "Own", false, false).accept(input);
+        }
+    }
     private final String permission;
     private final Predicate<String[]> syntaxValidator;
     private final TabCompleter tabCompleter;

@@ -3,6 +3,7 @@ package me.leoko.advancedban;
 import me.leoko.advancedban.utils.Permissionable;
 import me.leoko.advancedban.utils.Punishment;
 import me.leoko.advancedban.utils.tabcompletion.TabCompleter;
+import sun.security.krb5.Config;
 
 import java.io.File;
 import java.io.InputStreamReader;
@@ -47,7 +48,7 @@ public interface MethodInterface {
      *
      * @return the config
      */
-    Object getConfig();
+     Object getConfig();
 
     /**
      * Get the messages.yml file
