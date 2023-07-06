@@ -11,12 +11,8 @@ import net.md_5.bungee.api.plugin.Command;
 
 public class CommandReceiverBungee extends Command {
 
-    /**
-     * @param name       name of the command
-     * @param permission permission required to use the command. May be null
-     */
-    public CommandReceiverBungee(String name, String permission) {
-        super(name, permission);
+    public CommandReceiverBungee(String name) {
+        super(name);
     }
     
     @Override

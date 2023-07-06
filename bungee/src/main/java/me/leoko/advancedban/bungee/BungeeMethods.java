@@ -10,7 +10,6 @@ import me.leoko.advancedban.Universal;
 import me.leoko.advancedban.bungee.event.PunishmentEvent;
 import me.leoko.advancedban.bungee.event.RevokePunishmentEvent;
 import me.leoko.advancedban.bungee.listener.CommandReceiverBungee;
-import me.leoko.advancedban.bungee.utils.CloudNetCloudPermsOfflineUser;
 import me.leoko.advancedban.bungee.utils.LuckPermsOfflineUser;
 import me.leoko.advancedban.manager.DatabaseManager;
 import me.leoko.advancedban.manager.PunishmentManager;
@@ -38,7 +37,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * Created by Leoko @ dev.skamps.eu on 23.07.2016.
@@ -54,21 +52,15 @@ public class BungeeMethods implements MethodInterface {
     private Configuration layouts;
     private Configuration mysql;
 
-    private final Function<String, Permissionable> permissionableGenerator;
+    private final boolean luckPermsSupport;
 
     public BungeeMethods() {
         if (ProxyServer.getInstance().getPluginManager().getPlugin("LuckPerms") != null) {
-            permissionableGenerator = LuckPermsOfflineUser::new;
-
+            luckPermsSupport = true;
             log("[AdvancedBan] Offline permission support through LuckPerms active");
-        } else if (ProxyServer.getInstance().getPluginManager().getPlugin("CloudNet-CloudPerms") != null) {
-            permissionableGenerator = CloudNetCloudPermsOfflineUser::new;
-
-            log("[AdvancedBan] Offline permission support through CloudNet-CloudPerms active");
         } else {
-            permissionableGenerator = null;
-
-            log("[AdvancedBan] No offline permission support through LuckPerms or CloudNet-CloudPerms");
+            luckPermsSupport = false;
+            log("[AdvancedBan] No offline permission support through LuckPerms");
         }
     }
 
@@ -178,8 +170,8 @@ public class BungeeMethods implements MethodInterface {
     }
 
     @Override
-    public void setCommandExecutor(String cmd, String permission, TabCompleter tabCompleter) {
-        ProxyServer.getInstance().getPluginManager().registerCommand(getPlugin(), new CommandReceiverBungee(cmd, permission));
+    public void setCommandExecutor(String cmd, TabCompleter tabCompleter) {
+        ProxyServer.getInstance().getPluginManager().registerCommand(getPlugin(), new CommandReceiverBungee(cmd));
     }
 
     @SuppressWarnings("deprecation")
@@ -195,9 +187,7 @@ public class BungeeMethods implements MethodInterface {
 
     @Override
     public Permissionable getOfflinePermissionPlayer(String name) {
-        if (permissionableGenerator != null) {
-            return permissionableGenerator.apply(name);
-        }
+        if(luckPermsSupport) return new LuckPermsOfflineUser(name);
 
         return permission -> false;
     }
