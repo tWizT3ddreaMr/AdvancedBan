@@ -480,9 +480,16 @@ public enum Command {
         MethodInterface mi = Universal.get().getMethods();
         List<PunishmentType> Types = new ArrayList<>();
         Object c =mi.getConfig();
-
-        if(put == null)
-            mi.getStringList(c,"FullHistory").forEach((typeString -> Types.add(PunishmentType.valueOf(typeString))));
+        if(put == null) {
+            if (!Universal.get().hasPerms(input.getSender(), "ab.history.all")) {
+                mi.getStringList(c, "FullHistory").forEach((typeString -> Types.add(PunishmentType.valueOf(typeString))));
+            }
+            else {
+                new ListProcessor(
+                        target -> PunishmentManager.get().getPunishments(target, null, current),
+                        FriendlyName, false, true).accept(input);
+            }
+        }
         else
             Types.add(put);
 
