@@ -487,7 +487,8 @@ public enum Command {
             else {
                 new ListProcessor(
                         target -> PunishmentManager.get().getPunishments(target, null, current),
-                        FriendlyName, false, true).accept(input);
+                        FriendlyName, true, true).accept(input);
+                return;
             }
         }
         else
